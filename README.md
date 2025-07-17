@@ -173,12 +173,3 @@ Each team:
 
 ---
 
-> ⚡ **Next:** If you'd like, I can also prepare:
->
-> - Sample GraphQL schema & resolvers for user management
-> - Project folder structure
-> - Swagger/OpenAPI spec
-> - Database ERD diagram
->
-> Just let me know!
-
