@@ -163,13 +163,13 @@ Each team:
 
 ---
 
-## ✅ Development Suggestions
+## ✅ Development Requirements
 
 - Use JWT for authentication
 - Validate role before allowing team creation or manager addition
 - Handle errors: duplicate email, invalid role, unauthorized actions
 - Write models for User, Team, Folder, Note
-- Use Go or Node.js (Express/Koa/Fiber/Chi)
+- Use Go Framework (Gin)
 
 ---
 
