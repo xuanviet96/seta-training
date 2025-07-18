@@ -152,7 +152,7 @@ Each team:
 
 ---
 
-## 🧩 Database Design Suggestion
+## 🧩 Database Design Suggestion (PostgreSQL)
 
 - Users: `userId`, `username`, `email`, `role`, `passwordHash`
 - Teams: `teamId`, `teamName`
@@ -169,7 +169,7 @@ Each team:
 - Validate role before allowing team creation or manager addition
 - Handle errors: duplicate email, invalid role, unauthorized actions
 - Write models for User, Team, Folder, Note
-- Use Go Framework (Gin)
+- Use Go Framework (Gin + GORM)
 
 ---
 
