@@ -1,175 +1,306 @@
-# seta-training
-SETA golang/nodejs training
-# 🏗 Training Exercise: User, Team & Asset Management
+# 🚀 Seta Training - Go REST API
 
-## 🎯 Objective
+A modern Go REST API service for post management with full-text search capabilities.
 
-Build a system to manage users and teams:
+## 🏗️ **Current Implementation Status**
 
-- Users can have roles: **manager** or **member**.
-- Managers can create teams, add/remove members or other managers.
-- Users can manage and share digital assets (folders & notes) with access control.
+✅ **REST API for Post Management** - Fully implemented and working!
 
----
+This project currently implements a complete REST API for managing posts with:
+- **Database Integration**: PostgreSQL with GORM
+- **Caching**: Redis for performance optimization
+- **Search**: Elasticsearch for full-text search
+- **API Framework**: Gin web framework
+- **Background Processing**: Async indexing
+- **Health Monitoring**: Service health checks
 
-## ⚙ System Architecture
+## 🎯 Project Scope
 
-- ✅ **GraphQL service**: For user management: create user, login, logout, fetch users, assign roles.
-- ✅ **REST API**: For team management & asset management (folders, notes, sharing).
-
----
-
-## 🧩 Functional Requirements
-
-### 🔹 User Management (GraphQL)
-
-- Create user:
-  - `userId` (auto-generated)
-  - `username`
-  - `email` (unique)
-  - `role`: "manager" or "member"
-- Authentication:
-  - Login, logout (JWT or session-based)
-- User listing & query:
-  - `fetchUsers` to get list of users
-- Role assignment:
-  - Manager: can create teams, manage users in teams
-  - Member: can only be added to teams, no team management
+This is a Go REST API training project that demonstrates:
+- Building REST APIs with Gin framework
+- PostgreSQL integration with GORM
+- Redis caching for performance
+- Elasticsearch for full-text search
+- Clean architecture patterns
+- Docker containerization
 
 ---
 
-### 🔹 Team Management (REST API)
+## 🚀 **Quick Start**
 
-- Managers can:
-  - Create teams
-  - Add/remove members
-  - Add/remove other managers (only main manager can do this)
+### Prerequisites
 
-Each team:
+- **Go 1.22+**
+- **Docker & Docker Compose**
+- **Git**
 
-- `teamId`
-- `teamName`
-- `managers` (list)
-- `members` (list)
+### 🔧 **Setup & Installation**
 
----
+```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd seta-training
 
-### 🔹 Asset Management & Sharing (REST API)
+# 2. Start dependencies (PostgreSQL, Redis, Elasticsearch)
+docker compose up -d postgres redis elasticsearch
 
-- **Folders**: owned by users, contain notes
-- **Notes**: belong to folders, have content
-- Users can:
-  - Share folders or individual notes with other users (read or write access)
-  - Revoke access at any time
-- When sharing a folder → all notes inside are also shared
+# 3. Wait for services to be healthy (about 30 seconds)
+docker compose ps
 
-**Managers**:
+# 4. Run database migrations
+Get-Content migrations/0001_init_sql | docker exec -i seta-training-postgres-1 psql -U postgres -d blog
 
-- Can view (read-only) all assets their team members have or can access
-- Cannot edit unless explicitly shared with write access
+# 5. Build and run the server
+go mod tidy
+go build -o bin/server.exe ./cmd/server
+./bin/server.exe
+```
 
----
+**Or use the convenient script:**
+```powershell
+./start_server.ps1
+```
 
-## 🔑 Key Rules & Permissions
+### 🧪 **Testing the API**
 
-- Only authenticated users can use APIs.
-- Managers can only manage users within their own teams.
-- Members cannot create/manage teams.
-- Only asset owners can manage sharing.
+Run the automated test script:
+```powershell
+./test_api.ps1
+```
 
----
+Or test manually:
+```powershell
+# Health check
+Invoke-RestMethod -Uri "http://localhost:8080/health" -Method GET
 
-## 🛠 API Endpoints
-
-### 📌 GraphQL: User Management
-
-| Query/Mutation                      | Description             |
-| ----------------------------------- | ----------------------- |
-| `createUser(username, email, role)` | Create a new user       |
-| `login(email, password)`            | Login and receive token |
-| `logout()`                          | Logout current user     |
-| `fetchUsers()`                      | List all users          |
-
----
-
-### 📌 REST API: Team Management
-
-| Method | Path                                 | Description        |
-| ------ | ------------------------------------ | ------------------ |
-| POST   | /teams                               | Create a team      |
-| POST   | /teams/{teamId}/members              | Add member to team |
-| DELETE | /teams/{teamId}/members/{memberId}   | Remove member      |
-| POST   | /teams/{teamId}/managers             | Add manager        |
-| DELETE | /teams/{teamId}/managers/{managerId} | Remove manager     |
-
-#### ✅ Create team – request body:
-
-```json
-{
-  "teamName": "string",
-  "managers": [{"managerId": "string", "managerName": "string"}],
-  "members": [{"memberId": "string", "memberName": "string"}]
-}
+# Create a post
+$postData = '{"title":"My Post","content":"Content here","tags":["tag1","tag2"]}'
+Invoke-RestMethod -Uri "http://localhost:8080/v1/posts" -Method POST -Body $postData -ContentType "application/json"
 ```
 
 ---
 
-### 📌 REST API: Asset Management
+## 📋 **Currently Implemented API Endpoints**
 
-#### 🔹 Folder Management
+### 🏥 **Health & Monitoring**
 
-| Method | Path                | Description                    |
-| ------ | ------------------- | ------------------------------ |
-| POST   | /folders            | Create new folder              |
-| GET    | /folders/\:folderId | Get folder details             |
-| PUT    | /folders/\:folderId | Update folder (name, metadata) |
-| DELETE | /folders/\:folderId | Delete folder and its notes    |
+| Method | Path       | Description                               |
+|--------|-----------|-------------------------------------------|
+| GET    | `/health` | Check service health (DB, Redis, ES)     |
 
-#### 🔹 Note Management
+### 📝 **Post Management**
 
-| Method | Path                      | Description               |
-| ------ | ------------------------- | ------------------------- |
-| POST   | /folders/\:folderId/notes | Create note inside folder |
-| GET    | /notes/\:noteId           | View note                 |
-| PUT    | /notes/\:noteId           | Update note               |
-| DELETE | /notes/\:noteId           | Delete note               |
+| Method | Path                          | Description                    |
+|--------|-------------------------------|--------------------------------|
+| POST   | `/v1/posts`                   | Create a new post             |
+| GET    | `/v1/posts/:id`               | Get post by ID                |
+| PUT    | `/v1/posts/:id`               | Update post                   |
+| GET    | `/v1/posts/search-by-tag`     | Search posts by tag           |
+| GET    | `/v1/posts/search`            | Full-text search with ES      |
 
-#### 🔹 Sharing API
+### 📋 **Request/Response Examples**
 
-| Method | Path                               | Description                         |
-| ------ | ---------------------------------- | ----------------------------------- |
-| POST   | /folders/\:folderId/share          | Share folder with user (read/write) |
-| DELETE | /folders/\:folderId/share/\:userId | Revoke folder sharing               |
-| POST   | /notes/\:noteId/share              | Share single note                   |
-| DELETE | /notes/\:noteId/share/\:userId     | Revoke note sharing                 |
+#### Create Post
+```json
+POST /v1/posts
+{
+  "title": "My First Post",
+  "content": "This is the content of my post",
+  "tags": ["golang", "api", "tutorial"]
+}
+```
 
-#### 🔹 Manager-only APIs
+#### Response
+```json
+{
+  "id": 1,
+  "title": "My First Post",
+  "content": "This is the content of my post",
+  "tags": ["golang", "api", "tutorial"],
+  "created_at": "2025-09-17T18:27:30.252Z"
+}
+```
 
-| Method | Path                   | Description                                         |
-| ------ | ---------------------- | --------------------------------------------------- |
-| GET    | /teams/\:teamId/assets | View all assets that team members own or can access |
-| GET    | /users/\:userId/assets | View all assets owned by or shared with user        |
+#### Search by Tag
+```
+GET /v1/posts/search-by-tag?tag=golang
+```
+
+#### Full-text Search
+```
+GET /v1/posts/search?q=tutorial
+```
+
+---
+
+## 🏗️ **Architecture & Tech Stack**
+
+### **Backend Technologies**
+- **Language**: Go 1.22
+- **Web Framework**: Gin
+- **Database**: PostgreSQL 16 with GORM
+- **Cache**: Redis 7
+- **Search**: Elasticsearch 8.13
+- **Configuration**: Viper + .env files
+- **Logging**: Zap
+
+### **Project Structure**
+```
+├── cmd/server/          # Application entry point
+├── internal/
+│   ├── cache/          # Redis cache logic
+│   ├── config/         # Configuration management
+│   ├── database/       # Database connection
+│   ├── domain/
+│   │   ├── models/     # Data models
+│   │   ├── repository/ # Data access layer
+│   │   └── services/   # Business logic
+│   ├── http/
+│   │   ├── handlers/   # HTTP handlers
+│   │   ├── middleware/ # HTTP middleware
+│   │   └── router.go   # Route definitions
+│   ├── logger/         # Logging setup
+│   └── search/         # Elasticsearch integration
+├── migrations/         # Database migrations
+├── pkg/               # Shared packages
+├── docker-compose.yaml # Development services
+├── start_server.ps1   # Server startup script
+└── test_api.ps1       # API testing script
+```
+
+### **Database Schema**
+```sql
+-- Posts table
+CREATE TABLE posts (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR NOT NULL,
+  content TEXT NOT NULL,
+  tags TEXT[] NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Activity logs for audit trail
+CREATE TABLE activity_logs (
+  id SERIAL PRIMARY KEY,
+  action VARCHAR NOT NULL,
+  post_id INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  logged_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- GIN index for fast tag searches
+CREATE INDEX idx_posts_tags_gin ON posts USING GIN (tags);
+```
 
 ---
 
-## 🧩 Database Design Suggestion (PostgreSQL)
+## 🔧 **Configuration**
 
-- Users: `userId`, `username`, `email`, `role`, `passwordHash`
-- Teams: `teamId`, `teamName`
-- team\_members, team\_managers: mapping tables
-- Folders: `folderId`, `name`, `ownerId`
-- Notes: `noteId`, `title`, `body`, `folderId`, `ownerId`
-- folder\_shares, note\_shares: `userId`, `access` ("read" or "write")
+The application uses a `.env` file for configuration:
+
+```env
+# Application Configuration
+APP_PORT=8080
+APP_ENV=development
+
+# Database Configuration  
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/blog?sslmode=disable
+
+# Redis Configuration
+REDIS_ADDR=localhost:6379
+REDIS_DB=0
+REDIS_TTL_SECONDS=300
+
+# Elasticsearch Configuration
+ES_ADDR=http://localhost:9200
+ES_INDEX=posts
+```
 
 ---
 
-## ✅ Development Requirements
+## 🛠️ **Development Commands**
 
-- Use JWT for authentication
-- Validate role before allowing team creation or manager addition
-- Handle errors: duplicate email, invalid role, unauthorized actions
-- Write models for User, Team, Folder, Note
-- Use Go Framework (Gin + GORM)
+```powershell
+# Install dependencies
+go mod tidy
+
+# Build the application
+go build -o bin/server.exe ./cmd/server
+
+# Run the application
+go run ./cmd/server
+
+# Run tests
+go test -v ./...
+
+# Start services with Docker
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop services
+docker compose down
+```
 
 ---
+
+## � **Learning Outcomes**
+
+This project demonstrates key Go development concepts:
+
+- **REST API Development**: Building HTTP endpoints with Gin framework
+- **Database Integration**: Using GORM for PostgreSQL operations
+- **Caching Strategies**: Implementing Redis for performance optimization
+- **Search Implementation**: Integrating Elasticsearch for full-text search
+- **Clean Architecture**: Separating concerns with proper layering
+- **Background Processing**: Async operations for search indexing
+- **Error Handling**: Proper HTTP error responses and validation
+- **Testing**: API endpoint testing and validation
+- **Containerization**: Docker setup for development environment
+
+---
+
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 **License**
+
+This project is part of SETA training program.
+
+---
+
+## 🆘 **Troubleshooting**
+
+### Common Issues
+
+1. **Port already in use**: Make sure port 8080 is not used by another service
+2. **Docker services not starting**: Run `docker compose down` then `docker compose up -d`
+3. **Database connection failed**: Check if PostgreSQL container is healthy with `docker compose ps`
+4. **Elasticsearch not responding**: ES takes longer to start, wait ~30 seconds after `docker compose up`
+
+### Useful Commands
+
+```bash
+# Check service status
+docker compose ps
+
+# View logs
+docker compose logs postgres
+docker compose logs redis  
+docker compose logs elasticsearch
+
+# Restart specific service
+docker compose restart postgres
+
+# Reset everything
+docker compose down -v
+docker compose up -d
+```
 
