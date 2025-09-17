@@ -1,11 +1,15 @@
 package main
 
 import (
-	"github.com/xuanviet96/seta-training/internal/config"
-	"github.com/xuanviet96/seta-training/internal/database"
 	"log"
 
-	"github.com/gin-gonic/gin"
+	"github.com/xuanviet96/seta-training/internal/cache"
+	"github.com/xuanviet96/seta-training/internal/config"
+	"github.com/xuanviet96/seta-training/internal/database"
+	httpserver "github.com/xuanviet96/seta-training/internal/http"
+	"github.com/xuanviet96/seta-training/internal/logger"
+	"github.com/xuanviet96/seta-training/internal/search"
+
 	"github.com/joho/godotenv"
 )
 
@@ -18,44 +22,41 @@ func main() {
 	// Load configuration
 	cfg := config.Load()
 
+	// Initialize logger
+	logger := logger.New(cfg.AppEnv)
+
 	// Initialize database
-	db, err := database.Initialize(cfg)
+	db, err := database.Connect(cfg.DatabaseURL, logger)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	_ = db // Tạm thời không dùng DB nhưng vẫn giữ kết nối
 
-	// Set Gin mode
-	if cfg.Environment == "production" {
-		gin.SetMode(gin.ReleaseMode)
+	// Initialize Redis cache
+	redis, err := cache.New(cfg, logger)
+	if err != nil {
+		log.Printf("Failed to initialize Redis: %v", err)
+		// Continue without Redis if it fails
 	}
 
-	// Initialize Gin router
-	router := gin.Default()
+	// Initialize Elasticsearch
+	es, err := search.New(cfg, logger)
+	if err != nil {
+		log.Printf("Failed to initialize Elasticsearch: %v", err)
+		// Continue without ES if it fails
+	}
 
-	// Setup simple CORS middleware
-	router.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
+	// Ensure ES index exists
+	if es != nil {
+		if err := search.EnsureIndex(nil, es, cfg.ESIndex, logger); err != nil {
+			log.Printf("Failed to ensure ES index: %v", err)
 		}
-		c.Next()
-	})
+	}
 
-	// Health check endpoint
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "healthy"})
-	})
+	// Initialize HTTP router
+	router := httpserver.NewRouter(cfg, logger, db, redis, es)
 
-	// Start server
-	log.Printf("Server starting on port %s", cfg.Port)
-	log.Printf("Health check: http://localhost:%s/health", cfg.Port)
-
-	if err := router.Run(":" + cfg.Port); err != nil {
+	log.Printf("Server starting on port %s", cfg.AppPort)
+	if err := router.Run(":" + cfg.AppPort); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }

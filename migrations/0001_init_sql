@@ -1,0 +1,18 @@
+-- Schema
+CREATE TABLE IF NOT EXISTS posts (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR NOT NULL,
+  content TEXT NOT NULL,
+  tags TEXT[] NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id SERIAL PRIMARY KEY,
+  action VARCHAR NOT NULL,
+  post_id INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  logged_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Performance index for tag search
+CREATE INDEX IF NOT EXISTS idx_posts_tags_gin ON posts USING GIN (tags);
