@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"go_blog/internal/config"
+	"github.com/xuanviet96/seta-training/internal/config"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"

@@ -1,45 +1,39 @@
 package database
 
 import (
-	"fmt"
-	"github.com/xuanviet96/seta-training/internal/config"
-	"github.com/xuanviet96/seta-training/internal/models"
+	"database/sql"
+	"errors"
 
+	"github.com/xuanviet96/seta-training/internal/config"
+	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func Initialize(cfg *config.Config) (*gorm.DB, error) {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		cfg.Database.Host,
-		cfg.Database.User,
-		cfg.Database.Password,
-		cfg.Database.DBName,
-		cfg.Database.Port,
-	)
-
+func Connect(dsn string, log *zap.Logger) (*gorm.DB, error) {
+	if dsn == "" {
+		return nil, errors.New("DATABASE_URL is empty")
+	}
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
+		return nil, err
 	}
-
-	// Auto-migrate the schema
-	if err := autoMigrate(db); err != nil {
-		return nil, fmt.Errorf("failed to migrate database: %w", err)
-	}
-
 	return db, nil
 }
 
-func autoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(
-		&models.User{},
-		&models.Team{},
-		&models.TeamMember{},
-		&models.TeamManager{},
-		&models.Folder{},
-		&models.Note{},
-		&models.FolderShare{},
-		&models.NoteShare{},
-	)
+// Initialize opens a DB connection using the provided config.
+func Initialize(cfg config.Config) (*gorm.DB, error) {
+	return Connect(cfg.DatabaseURL, nil)
+}
+
+func Ping(gdb *gorm.DB) error {
+	sqlDB, err := gdb.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Ping()
+}
+
+func RawPing(sqlDB *sql.DB) error {
+	return sqlDB.Ping()
 }
